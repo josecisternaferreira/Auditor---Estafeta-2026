@@ -98,9 +98,10 @@ CODIGOS_CIUDAD = {
     'CONSTITUCION': 'CTT'
 }
 
-# RAMALES (cargo adicional)
+# RAMALES (se cobra la tarifa de la ciudad_base + un cargo adicional)
 RAMALES = {
-    'MEJILLONES': {'origen': 'ANTOFAGASTA', 'cargo': 30550},
+    'MEJILLONES': {'ciudad_base': 'ANTOFAGASTA', 'cargo': 30550},
+    'PUERTO VARAS': {'ciudad_base': 'PUERTO MONTT', 'cargo': 0},
 }
 
 def calcular_tarifa_base(peso_facturable, tarifas_ruta):
@@ -164,12 +165,9 @@ def auditar_excel(df):
             es_ramal = False
             if destino_raw in RAMALES:
                 ramal_info = RAMALES[destino_raw]
-                if origen_raw == ramal_info['origen']:
-                    cargo_ramal = ramal_info['cargo']
-                    destino_para_tarifa = origen_raw
-                    es_ramal = True
-                else:
-                    destino_para_tarifa = destino_raw
+                cargo_ramal = ramal_info['cargo']
+                destino_para_tarifa = ramal_info['ciudad_base']
+                es_ramal = True
             else:
                 destino_para_tarifa = destino_raw
             
