@@ -310,17 +310,19 @@ if uploaded_file:
             st.success("✅ Auditoría completada")
             
             # Métricas
-            col1, col2, col3, col4 = st.columns(4)
-            
+            col1, col2, col3, col4, col5 = st.columns(5)
+
             total = len(df_audit)
             correctos = len(df_audit[df_audit['Estado'] == 'CORRECTO'])
             sobrecobros = len(df_audit[df_audit['Estado'] == 'SOBRECOBRO'])
             cobros_menos = len(df_audit[df_audit['Estado'] == 'COBRO_MENOS'])
-            
+            sin_tarifa = len(df_audit[df_audit['Estado'] == 'SIN_TARIFA'])
+
             col1.metric("Total Órdenes", total)
             col2.metric("✅ Correctos", correctos)
             col3.metric("🔴 Sobrecobros", sobrecobros)
             col4.metric("🟢 Cobros Menos", cobros_menos)
+            col5.metric("⚠️ Sin Tarifa", sin_tarifa)
             
             # Resumen financiero
             st.markdown("### 💰 Resumen Financiero")
@@ -394,6 +396,13 @@ if uploaded_file:
                     delta=f"{porcentaje_diferencia_neta:+.2f}%"
                 )
             
+            # Detalle de órdenes sin tarifa (ruta no encontrada en la tabla)
+            if sin_tarifa > 0:
+                st.markdown("### ⚠️ Órdenes Sin Tarifa (no encontradas en la tabla)")
+                st.warning(f"Se encontraron **{sin_tarifa}** órdenes cuya ruta Origen-Destino no está en la tabla de tarifas. Deben revisarse manualmente.")
+                sin_tarifa_df = df_audit[df_audit['Estado'] == 'SIN_TARIFA'][['Orden', 'Origen', 'Destino', 'Peso_Fact_kg', 'Cobrado_Neto']]
+                st.dataframe(sin_tarifa_df, use_container_width=True)
+
             # Detalles de sobrecobros
             if sobrecobros > 0:
                 st.markdown("### 🔴 Sobrecobros Detectados")
