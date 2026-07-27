@@ -420,7 +420,16 @@ if uploaded_file:
                 
                 total_reclamable = sobrecobros_df['Diferencia'].sum()
                 st.info(f"💵 **Total reclamable: ${total_reclamable:,.0f}**")
-            
+
+            # Detalles de cobros menos
+            if cobros_menos > 0:
+                st.markdown("### 🟢 Cobros Menos Detectados")
+                cobros_menos_df = df_audit[df_audit['Estado'] == 'COBRO_MENOS'][['Orden', 'Origen', 'Destino', 'Peso_Fact_kg', 'Cobrado_Neto', 'Tarifa_Correcta', 'Diferencia']]
+                st.dataframe(cobros_menos_df, use_container_width=True)
+
+                total_a_favor = abs(cobros_menos_df['Diferencia'].sum())
+                st.info(f"💵 **Total a favor: ${total_a_favor:,.0f}**")
+
             # Tabla completa
             with st.expander("📋 Ver auditoría completa"):
                 st.dataframe(df_audit, use_container_width=True)
