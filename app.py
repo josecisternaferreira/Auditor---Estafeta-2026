@@ -245,8 +245,31 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file:
     try:
-        # Leer Excel
-        df = pd.read_excel(uploaded_file, header=4)
+        # Leer Excel: buscar la fila de encabezados (la que contiene 'OrdFle')
+        # en vez de asumir una fila fija, porque varía entre Estados de Pago
+        df_raw = pd.read_excel(uploaded_file, header=None)
+        fila_header = None
+        for i, fila in df_raw.head(30).iterrows():
+            if any(str(v).strip().upper() == 'ORDFLE' for v in fila.values):
+                fila_header = i
+                break
+
+        if fila_header is None:
+            st.error("❌ No se encontró la columna 'OrdFle' en las primeras 30 filas del archivo.")
+            st.info("Primeras filas del archivo, para revisar cómo vienen los encabezados:")
+            st.dataframe(df_raw.head(15).astype(str))
+            st.stop()
+
+        df = df_raw.iloc[fila_header + 1:].copy()
+        df.columns = [str(c).strip() for c in df_raw.iloc[fila_header]]
+        df = df.reset_index(drop=True)
+
+        faltantes = [c for c in ['OrdFle', 'Origen', 'Destino', 'Kg.Bul', 'Kg.Vol.', 'Neto Fac'] if c not in df.columns]
+        if faltantes:
+            st.error(f"❌ Faltan columnas: {', '.join(faltantes)}")
+            st.info(f"Columnas encontradas en el archivo: {', '.join(df.columns)}")
+            st.stop()
+
         df = df[pd.notna(df['OrdFle'])].copy()
         df = df[df['Origen'].notna()].copy()
         
