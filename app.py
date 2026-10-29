@@ -245,20 +245,29 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file:
     try:
-        # Leer Excel: buscar la fila de encabezados (la que contiene 'OrdFle')
-        # en vez de asumir una fila fija, porque varía entre Estados de Pago
-        df_raw = pd.read_excel(uploaded_file, header=None)
+        # Leer Excel: buscar en todas las hojas la fila de encabezados (la que
+        # contiene 'OrdFle'), porque la hoja y la fila varían entre archivos
+        # (ej: el usuario agrega una tabla dinámica como primera hoja)
+        hojas = pd.read_excel(uploaded_file, header=None, sheet_name=None)
+        df_raw = None
         fila_header = None
-        for i, fila in df_raw.head(30).iterrows():
-            if any(str(v).strip().upper() == 'ORDFLE' for v in fila.values):
-                fila_header = i
+        for nombre_hoja, hoja in hojas.items():
+            for i, fila in hoja.head(30).iterrows():
+                if any(str(v).strip().upper() == 'ORDFLE' for v in fila.values):
+                    df_raw, fila_header = hoja, i
+                    break
+            if df_raw is not None:
                 break
 
-        if fila_header is None:
-            st.error("❌ No se encontró la columna 'OrdFle' en las primeras 30 filas del archivo.")
-            st.info("Primeras filas del archivo, para revisar cómo vienen los encabezados:")
-            st.dataframe(df_raw.head(15).astype(str))
+        if df_raw is None:
+            st.error("❌ No se encontró la columna 'OrdFle' en ninguna hoja del archivo.")
+            for nombre_hoja, hoja in hojas.items():
+                st.info(f"Primeras filas de la hoja '{nombre_hoja}':")
+                st.dataframe(hoja.head(15).astype(str))
             st.stop()
+
+        if len(hojas) > 1:
+            st.caption(f"Datos leídos desde la hoja '{nombre_hoja}'")
 
         df = df_raw.iloc[fila_header + 1:].copy()
         df.columns = [str(c).strip() for c in df_raw.iloc[fila_header]]
